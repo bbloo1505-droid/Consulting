@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Environmental Trigger Checker</title>
+</head>
+
+<body>
+
+<h1>QLD Environmental Trigger Checker</h1>
+
+<input id="lat" placeholder="Latitude">
+<input id="lon" placeholder="Longitude">
+
+<button onclick="checkSite()">Check Site</button>
+
+<pre id="result"></pre>
+
+<script>
+async function checkSite() {
+
+const lat = document.getElementById("lat").value
+const lon = document.getElementById("lon").value
+
+const res = await fetch(`/api/check-site?lat=${lat}&lon=${lon}`)
+const data = await res.json()
+
+document.getElementById("result").textContent =
+JSON.stringify(data, null, 2)
+
+}
+</script>
+
+</body>
+</html>
