@@ -1,34 +1,97 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Environmental Trigger Checker</title>
+  <title>QLD Environmental Trigger Checker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 0 16px;
+      background: #f7f7f7;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    input, button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 10px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    button {
+      background: #0f766e;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #115e59;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 16px;
+      background: #eefcf8;
+      border-radius: 10px;
+    }
+    .error {
+      margin-top: 20px;
+      padding: 16px;
+      background: #fee2e2;
+      border-radius: 10px;
+      color: #991b1b;
+    }
+  </style>
 </head>
-
 <body>
+  <div class="card">
+    <h1>QLD Environmental Trigger Checker</h1>
+    <p>Enter coordinates to check for environmental triggers.</p>
 
-<h1>QLD Environmental Trigger Checker</h1>
+    <input id="lat" placeholder="Latitude (e.g. -26.61)" />
+    <input id="lon" placeholder="Longitude (e.g. 153.10)" />
+    <button onclick="checkSite()">Check Site</button>
 
-<input id="lat" placeholder="Latitude">
-<input id="lon" placeholder="Longitude">
+    <div id="result"></div>
+  </div>
 
-<button onclick="checkSite()">Check Site</button>
+  <script>
+    async function checkSite() {
+      const lat = document.getElementById("lat").value.trim();
+      const lon = document.getElementById("lon").value.trim();
+      const result = document.getElementById("result");
 
-<pre id="result"></pre>
+      result.innerHTML = "Checking...";
 
-<script>
-async function checkSite() {
+      try {
+        const res = await fetch(`/api/check-site?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`);
+        const data = await res.json();
 
-const lat = document.getElementById("lat").value
-const lon = document.getElementById("lon").value
+        if (!res.ok) {
+          result.innerHTML = `<div class="error">${data.error || "Something went wrong."}</div>`;
+          return;
+        }
 
-const res = await fetch(`/api/check-site?lat=${lat}&lon=${lon}`)
-const data = await res.json()
-
-document.getElementById("result").textContent =
-JSON.stringify(data, null, 2)
-
-}
-</script>
-
+        result.innerHTML = `
+          <div class="result">
+            <h3>Results</h3>
+            <p><strong>Latitude:</strong> ${data.latitude}</p>
+            <p><strong>Longitude:</strong> ${data.longitude}</p>
+            <p><strong>MSES:</strong> ${data.mses ? "Yes" : "No"}</p>
+          </div>
+        `;
+      } catch (err) {
+        result.innerHTML = `<div class="error">Failed to connect to the checker.</div>`;
+      }
+    }
+  </script>
 </body>
 </html>
