@@ -23,12 +23,8 @@ export default async function handler(req, res) {
         url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/2/query"
       },
       {
-        name: "MSES regulated vegetation [defined watercourse]",
-        url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/8/query"
-      },
-      {
-        name: "MSES regulated vegetation [category B - endangered/of concern]",
-        url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/15/query"
+        name: "MSES protected area [special wildlife reserves]",
+        url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/25/query"
       },
       {
         name: "MSES regulated vegetation [100m from wetland]",
@@ -41,25 +37,37 @@ export default async function handler(req, res) {
       geometry: JSON.stringify({
         x: longitude,
         y: latitude,
-        spatialReference: { wkid: 4326 },
+        spatialReference: { wkid: 4326 }
       }),
       geometryType: "esriGeometryPoint",
       inSR: "4326",
       spatialRel: "esriSpatialRelIntersects",
       returnIdsOnly: "true",
+      returnGeometry: "false"
     });
 
     const checks = await Promise.all(
       layers.map(async (layer) => {
-        const response = await fetch(`${layer.url}?${params.toString()}`);
-        const data = await response.json();
-        const hit = Array.isArray(data?.objectIds) && data.objectIds.length > 0;
+        try {
+          const response = await fetch(`${layer.url}?${params.toString()}`);
+          const data = await response.json();
 
-        return {
-          name: layer.name,
-          hit,
-          count: hit ? data.objectIds.length : 0,
-        };
+          const hit = Array.isArray(data?.objectIds) && data.objectIds.length > 0;
+
+          return {
+            name: layer.name,
+            hit,
+            count: hit ? data.objectIds.length : 0,
+            error: data?.error || null
+          };
+        } catch (err) {
+          return {
+            name: layer.name,
+            hit: false,
+            count: 0,
+            error: err instanceof Error ? err.message : "Unknown request error"
+          };
+        }
       })
     );
 
@@ -70,7 +78,7 @@ export default async function handler(req, res) {
       longitude,
       mses: anyMses,
       hits: checks.filter((c) => c.hit),
-      checks,
+      checks
     });
   } catch (error) {
     console.error(error);
