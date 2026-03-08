@@ -15,27 +15,27 @@ export default async function handler(req, res) {
 
     const layers = [
       {
-        name: "MSES protected area [estates]",
-        url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/1/query"
+        name: "MSES declared high ecological value waters [wetland]",
+        url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/10/query"
       },
       {
-        name: "MSES protected area [nature refuges]",
-        url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/2/query"
+        name: "MSES high ecological significance wetlands",
+        url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/11/query"
       },
       {
         name: "MSES regulated vegetation [100m from wetland]",
         url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/19/query"
+      },
+      {
+        name: "MSES protected area [nature refuges]",
+        url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/2/query"
       }
     ];
 
     const params = new URLSearchParams({
       f: "json",
       where: "1=1",
-      geometry: JSON.stringify({
-        x: longitude,
-        y: latitude,
-        spatialReference: { wkid: 4326 }
-      }),
+      geometry: `${longitude},${latitude}`,
       geometryType: "esriGeometryPoint",
       inSR: "4326",
       spatialRel: "esriSpatialRelIntersects",
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
             name: layer.name,
             hit,
             count: hit ? data.objectIds.length : 0,
-            error: data.error || null
+            error: data?.error || null
           };
         } catch (err) {
           return {
@@ -77,7 +77,6 @@ export default async function handler(req, res) {
       hits: checks.filter((c) => c.hit),
       checks
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Failed to check site." });
