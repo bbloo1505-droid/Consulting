@@ -13,9 +13,28 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Latitude and longitude must be valid numbers." });
     }
 
-    // Replace this with the exact MSES query layer later if needed
-    const msesUrl =
-      "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/0/query";
+    const layers = [
+      {
+        name: "MSES protected area [estates]",
+        url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/1/query"
+      },
+      {
+        name: "MSES protected area [nature refuges]",
+        url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/2/query"
+      },
+      {
+        name: "MSES regulated vegetation [defined watercourse]",
+        url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/8/query"
+      },
+      {
+        name: "MSES regulated vegetation [category B - endangered/of concern]",
+        url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/15/query"
+      },
+      {
+        name: "MSES regulated vegetation [100m from wetland]",
+        url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/19/query"
+      }
+    ];
 
     const params = new URLSearchParams({
       f: "json",
@@ -30,22 +49,31 @@ export default async function handler(req, res) {
       returnIdsOnly: "true",
     });
 
-    const response = await fetch(`${msesUrl}?${params.toString()}`);
-    const data = await response.json();
+    const checks = await Promise.all(
+      layers.map(async (layer) => {
+        const response = await fetch(`${layer.url}?${params.toString()}`);
+        const data = await response.json();
+        const hit = Array.isArray(data?.objectIds) && data.objectIds.length > 0;
 
-    const hasMses =
-      Array.isArray(data?.objectIds) && data.objectIds.length > 0;
+        return {
+          name: layer.name,
+          hit,
+          count: hit ? data.objectIds.length : 0,
+        };
+      })
+    );
+
+    const anyMses = checks.some((c) => c.hit);
 
     return res.status(200).json({
       latitude,
       longitude,
-      mses: hasMses,
-      raw: data,
+      mses: anyMses,
+      hits: checks.filter((c) => c.hit),
+      checks,
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({
-      error: "Failed to check site.",
-    });
+    return res.status(500).json({ error: "Failed to check site." });
   }
 }
