@@ -23,10 +23,6 @@ export default async function handler(req, res) {
         url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/2/query"
       },
       {
-        name: "MSES protected area [special wildlife reserves]",
-        url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/25/query"
-      },
-      {
         name: "MSES regulated vegetation [100m from wetland]",
         url: "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/MattersOfStateEnvironmentalSignificance/MapServer/19/query"
       }
@@ -34,6 +30,7 @@ export default async function handler(req, res) {
 
     const params = new URLSearchParams({
       f: "json",
+      where: "1=1",
       geometry: JSON.stringify({
         x: longitude,
         y: latitude,
@@ -58,14 +55,14 @@ export default async function handler(req, res) {
             name: layer.name,
             hit,
             count: hit ? data.objectIds.length : 0,
-            error: data?.error || null
+            error: data.error || null
           };
         } catch (err) {
           return {
             name: layer.name,
             hit: false,
             count: 0,
-            error: err instanceof Error ? err.message : "Unknown request error"
+            error: "Layer request failed"
           };
         }
       })
@@ -80,6 +77,7 @@ export default async function handler(req, res) {
       hits: checks.filter((c) => c.hit),
       checks
     });
+
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Failed to check site." });
